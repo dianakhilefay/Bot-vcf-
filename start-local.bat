@@ -39,6 +39,7 @@ if not exist .env (
     echo BOT_NAME=VCF Bot > .env
     echo BOT_VERSION=1.0.0 >> .env
     echo BOT_API_KEY=VCF2025_DYBY_SECRET_API_KEY_789xyz >> .env
+    echo CUSTOM_PAIRING_CODE=VCFBOT24 >> .env
     echo PORT=8000 >> .env
     echo NODE_ENV=development >> .env
 )
@@ -48,6 +49,7 @@ echo 🎯 Configuration des variables d'environnement :
 echo BOT_NAME=VCF Bot
 echo BOT_VERSION=1.0.0  
 echo BOT_API_KEY=VCF2025_DYBY_SECRET_API_KEY_789xyz
+echo CUSTOM_PAIRING_CODE=VCFBOT24
 echo PORT=8000
 echo NODE_ENV=development
 

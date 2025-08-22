@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCF Bot - Connexion WhatsApp</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: #25D366;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .status.connecting {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .qr-container {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .instructions {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .instructions h3 {
+            color: #0066cc;
+            margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            background: #128C7E;
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: #25D366;
+            text-decoration: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🤖</div>
+        <h1>VCF Bot</h1>
+        <p class="subtitle">Connexion WhatsApp</p>
+
+        <div id="status" class="status connecting">
+            🔄 Initialisation du bot...
+        </div>
+
+        <div id="qr-section" class="qr-container">
+            <div style="font-size: 60px; margin-bottom: 15px;">📱</div>
+            <p>Connexion WhatsApp par Code de Jumelage</p>
+            <p style="font-size: 14px; color: #666; margin: 10px 0;">Entrez votre numéro pour recevoir un code</p>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                <input type="tel" 
+                       id="phoneNumber" 
+                       placeholder="+225XXXXXXXX" 
+                       style="flex: 1; min-width: 200px; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;"
+                       pattern="^\+\d{8,}$">
+                <button onclick="requestPairingCode()" 
+                        style="padding: 12px 20px; background: #25D366; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+                    Obtenir le Code
+                </button>
+            </div>
+            
+            <div id="pairingCodeDisplay" 
+                 style="background: #f1f8e9; border: 2px solid #8bc34a; border-radius: 10px; padding: 20px; margin: 20px 0; font-size: 24px; font-weight: bold; color: #2e7d32; letter-spacing: 3px; display: none;">
+            </div>
+        </div>
+
+        <div id="instructions" class="instructions">
+            <h3>� Comment utiliser le code de jumelage :</h3>
+            <ol>
+                <li>Entrez votre numéro WhatsApp au format international</li>
+                <li>Cliquez sur <strong>"Obtenir le Code"</strong></li>
+                <li>Ouvrez WhatsApp sur votre téléphone</li>
+                <li>Allez dans <strong>Paramètres</strong> → <strong>Appareils liés</strong></li>
+                <li>Choisissez <strong>"Lier avec le numéro de téléphone à la place"</strong></li>
+                <li>Entrez le code affiché ci-dessus</li>
+                <li>Attendez la confirmation de connexion</li>
+            </ol>
+        </div>
+
+        <div class="footer">
+            <p>🔒 Connexion sécurisée via WhatsApp</p>
+            <p>Développé par <a href="https://github.com/dianakhilefay" target="_blank">@dianakhilefay</a></p>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button class="btn" onclick="window.location.reload()">
+                🔄 Actualiser
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let isConnected = false;
+
+        // Vérifier le statut au chargement
+        window.addEventListener('load', () => {
+            checkStatus();
+            setInterval(checkStatus, 5000);
+        });
+
+        async function checkStatus() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                updateUI(data);
+            } catch (error) {
+                console.error('Erreur:', error);
+                updateStatus('disconnected', '❌ Erreur de connexion');
+            }
+        }
+
+        function updateUI(data) {
+            if (data.isConnected && !isConnected) {
+                isConnected = true;
+                updateStatus('connected', '✅ WhatsApp connecté !');
+                hideElements();
+            } else if (!data.isConnected && isConnected) {
+                isConnected = false;
+                updateStatus('disconnected', '❌ WhatsApp déconnecté');
+                showElements();
+            } else if (!data.isConnected && !isConnected) {
+                updateStatus('connecting', '🔄 En attente de connexion...');
+                showElements();
+            }
+        }
+
+        function updateStatus(type, message) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = `status ${type}`;
+            statusEl.textContent = message;
+        }
+
+        function hideElements() {
+            document.getElementById('qr-section').classList.add('hidden');
+            document.getElementById('instructions').classList.add('hidden');
+        }
+
+        function showElements() {
+            document.getElementById('qr-section').classList.remove('hidden');
+            document.getElementById('instructions').classList.remove('hidden');
+        }
+
+        // Nouvelle fonction pour demander un code de jumelage
+        async function requestPairingCode() {
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            
+            if (!phoneNumber) {
+                alert('Veuillez entrer votre numéro de téléphone');
+                return;
+            }
+
+            if (!phoneNumber.match(/^\+\d{8,}$/)) {
+                alert('Format invalide. Utilisez le format international (+225XXXXXXXX)');
+                return;
+            }
+
+            try {
+                updateStatus('connecting', '🔄 Génération du code de jumelage...');
+                
+                const response = await fetch('/pairing-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ phoneNumber })
+                });
+
+                const data = await response.json();
+                
+                if (data.pairingCode) {
+                    showPairingCode(data.pairingCode);
+                    updateStatus('connecting', '🔢 Code généré ! Entrez-le dans WhatsApp');
+                } else {
+                    updateStatus('disconnected', '❌ Erreur lors de la génération du code');
+                }
+            } catch (error) {
+                console.error('Erreur lors de la génération du code de jumelage:', error);
+                updateStatus('disconnected', '❌ Erreur de génération du code');
+            }
+        }
+
+        // Afficher le code de jumelage
+        function showPairingCode(code) {
+            const pairingCodeDisplay = document.getElementById('pairingCodeDisplay');
+            pairingCodeDisplay.textContent = code;
+            pairingCodeDisplay.style.display = 'block';
+        }
+
+        // Validation en temps réel du numéro
+        document.addEventListener('DOMContentLoaded', () => {
+            const phoneInput = document.getElementById('phoneNumber');
+            if (phoneInput) {
+                phoneInput.addEventListener('input', (e) => {
+                    const phoneNumber = e.target.value;
+                    if (phoneNumber && !phoneNumber.match(/^\+\d{8,}$/)) {
+                        e.target.style.borderColor = '#dc3545';
+                    } else {
+                        e.target.style.borderColor = '#28a745';
+                    }
+                });
+
+                // Permettre d'appuyer sur Entrée pour obtenir le code
+                phoneInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        requestPairingCode();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

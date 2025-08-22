@@ -305,28 +305,50 @@ app.get("/health", async (req, res) => {
 // Endpoint pour obtenir le code de jumelage
 app.post("/pairing-code", async (req, res) => {
   try {
-    const { phoneNumber } = req.body;
+    let { phoneNumber, customCode } = req.body;
+    
+    // Nettoyer le numéro de téléphone (garder seulement les chiffres)
+    phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
     
     if (!phoneNumber) {
-      return res.status(400).json({ status: "Phone number is required" });
+      return res.status(400).json({ status: "Invalid phone number" });
     }
 
-    // Générer un code de jumelage simple
-    const pairingCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    console.log(`🔢 Génération du code de jumelage pour: ${phoneNumber}`);
     
-    // Optionnel: Créer une session pour ce numéro
-    setTimeout(() => {
-      createBot(phoneNumber.replace(/[^\d]/g, ''));
-    }, 1000);
+    // Récupérer la session par défaut
+    const defaultSession = sessionSockets["default_session"];
+    if (!defaultSession) {
+      return res.status(500).json({ status: "Bot session not available" });
+    }
 
-    res.json({
-      pairingCode: pairingCode,
-      phoneNumber: phoneNumber,
-      status: "Pairing code generated successfully"
-    });
+    // Générer le code de jumelage avec un délai
+    setTimeout(async () => {
+      try {
+        // Utiliser le code personnalisé depuis l'environnement ou la requête
+        const customPairCode = customCode || process.env.CUSTOM_PAIRING_CODE || "VCFBOT24"; // 8 caractères max
+        
+        let pairingCode = await defaultSession.requestPairingCode(phoneNumber, customPairCode);
+        
+        // Formater le code avec des tirets (ex: ABCD-EFGH)
+        pairingCode = pairingCode?.match(/.{1,4}/g)?.join('-') || pairingCode;
+        
+        console.log(`✅ Code de jumelage généré: ${pairingCode}`);
+        
+        res.json({ 
+          pairingCode, 
+          customCode: customPairCode,
+          phoneNumber: phoneNumber,
+          status: "Pairing code generated successfully" 
+        });
+      } catch (error) {
+        console.error("❌ Erreur lors de la génération du code de jumelage:", error);
+        res.status(500).json({ status: "Error generating pairing code" });
+      }
+    }, 3000); // Délai de 3 secondes comme ton système original
 
   } catch (error) {
-    console.error("Error in /pairing-code:", error);
+    console.error("❌ Erreur dans /pairing-code:", error);
     res.status(500).json({ status: "Error generating pairing code" });
   }
 });
@@ -346,7 +368,7 @@ app.get("/status", (req, res) => {
 
 // Route pour l'interface web principale
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'simple.html'));
 });
 
 // Servir les fichiers statiques de l'interface web
