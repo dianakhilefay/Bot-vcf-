@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCF Bot - Interface de Connexion</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🤖</div>
+            <h1>VCF Bot WhatsApp</h1>
+            <p class="subtitle">Interface de connexion et de gestion</p>
+        </div>
+
+        <div id="status" class="status connecting">
+            🔄 Initialisation du bot...
+        </div>
+
+        <div class="status-card">
+            <h3>📊 Statut du Bot</h3>
+            <div id="bot-info">
+                <p><strong>Version:</strong> <span id="botVersion">1.0.0</span></p>
+                <p><strong>Connexions actives:</strong> <span id="activeConnections">0</span></p>
+                <p><strong>Temps de fonctionnement:</strong> <span id="uptime">0s</span></p>
+                <p><strong>Dernière mise à jour:</strong> <span id="lastUpdate">-</span></p>
+            </div>
+        </div>
+
+        <div id="qr-section" class="qr-container">
+            <div class="loading"></div>
+            <p>Génération du QR Code...</p>
+        </div>
+
+        <div id="instructions" class="instructions hidden">
+            <h3>📱 Comment connecter WhatsApp :</h3>
+            <ol>
+                <li>Ouvrez <strong>WhatsApp</strong> sur votre téléphone</li>
+                <li>Allez dans <strong>Paramètres</strong> → <strong>Appareils liés</strong></li>
+                <li>Appuyez sur <strong>"Lier un appareil"</strong></li>
+                <li>Scannez le QR code ci-dessus avec votre téléphone</li>
+                <li>Attendez la confirmation de connexion</li>
+            </ol>
+        </div>
+
+        <div id="pairing-section" class="pairing-section hidden">
+            <h3>🔢 Connexion par Code de Jumelage</h3>
+            <p>Entrez votre numéro WhatsApp au format international :</p>
+            <div class="pairing-input">
+                <input 
+                    type="tel" 
+                    id="phoneNumber" 
+                    placeholder="+225XXXXXXXX" 
+                    pattern="^\+\d{8,}$"
+                    title="Format: +225XXXXXXXX (code pays + numéro)"
+                />
+                <button onclick="requestPairingCode()">Obtenir le Code</button>
+            </div>
+            <div id="pairingCodeDisplay" class="pairing-code hidden"></div>
+            <p style="font-size: 14px; color: #666; margin-top: 10px;">
+                💡 Entrez ce code dans WhatsApp : Paramètres → Appareils liés → Entrer le code
+            </p>
+        </div>
+
+        <div class="footer">
+            <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
+                <button id="refreshBtn" class="btn" onclick="refreshConnection()">
+                    🔄 Actualiser
+                </button>
+                <button id="pairingBtn" class="btn btn-secondary" onclick="togglePairingMode()">
+                    🔢 Code de Jumelage
+                </button>
+                <a href="/health" class="btn btn-secondary" target="_blank">
+                    🔍 Santé du Serveur
+                </a>
+            </div>
+            
+            <p>🔒 Connexion sécurisée via WhatsApp Web Protocol</p>
+            <p>⚡ Développé par <a href="https://github.com/dianakhilefay" target="_blank">@dianakhilefay</a></p>
+            <p>🔗 <a href="https://github.com/dianakhilefay/Bot-vcf-" target="_blank">Repository GitHub</a></p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Mettre à jour les informations du bot périodiquement
+        async function updateBotInfo() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                
+                document.getElementById('botVersion').textContent = data.version || '1.0.0';
+                document.getElementById('activeConnections').textContent = data.activeConnections || '0';
+                document.getElementById('uptime').textContent = formatUptime(data.uptime || 0);
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour des infos bot:', error);
+            }
+        }
+
+        function formatUptime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m ${secs}s`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${secs}s`;
+            } else {
+                return `${secs}s`;
+            }
+        }
+
+        // Mettre à jour toutes les 10 secondes
+        setInterval(updateBotInfo, 10000);
+        
+        // Première mise à jour immédiate
+        updateBotInfo();
+    </script>
+</body>
+</html>
