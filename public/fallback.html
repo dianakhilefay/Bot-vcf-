@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCF Bot - Interface de Connexion</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .logo { font-size: 60px; margin-bottom: 20px; }
+        h1 { color: #25D366; margin-bottom: 10px; }
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .connecting {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        input, button {
+            padding: 12px;
+            margin: 5px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            background: #25D366;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover { background: #128C7E; }
+        .code-display {
+            background: #f1f8e9;
+            border: 2px solid #8bc34a;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2e7d32;
+            display: none;
+        }
+        .links { margin-top: 20px; }
+        .links a {
+            color: #25D366;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🤖</div>
+        <h1>VCF Bot</h1>
+        <p>Connexion WhatsApp</p>
+        
+        <div id="status" class="status connecting">🔄 Initialisation...</div>
+        
+        <div>
+            <h3>Code de Jumelage</h3>
+            <input type="tel" id="phone" placeholder="+225XXXXXXXX" style="width: 200px;">
+            <br>
+            <button onclick="getPairingCode()">Obtenir le Code</button>
+            <div id="codeDisplay" class="code-display"></div>
+        </div>
+        
+        <div class="links">
+            <a href="/health" target="_blank">Santé</a>
+            <a href="/status" target="_blank">Statut</a>
+            <a href="/test" target="_blank">Test</a>
+        </div>
+        
+        <footer style="margin-top: 20px; font-size: 12px; color: #666;">
+            Bot VCF par <a href="https://github.com/dianakhilefay" target="_blank">@dianakhilefay</a>
+        </footer>
+    </div>
+
+    <script>
+        async function checkStatus() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                const statusEl = document.getElementById('status');
+                if (data.isConnected) {
+                    statusEl.className = 'status connected';
+                    statusEl.textContent = '✅ WhatsApp connecté !';
+                } else {
+                    statusEl.className = 'status connecting';
+                    statusEl.textContent = '🔄 En attente de connexion...';
+                }
+            } catch (error) {
+                const statusEl = document.getElementById('status');
+                statusEl.className = 'status connecting';
+                statusEl.textContent = '❌ Erreur de connexion';
+            }
+        }
+
+        async function getPairingCode() {
+            const phone = document.getElementById('phone').value.trim();
+            if (!phone) return alert('Veuillez entrer votre numéro');
+            if (!phone.match(/^\+\d{8,}$/)) return alert('Format invalide. Utilisez +225XXXXXXXX');
+
+            try {
+                const response = await fetch('/pairing-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phoneNumber: phone })
+                });
+
+                const data = await response.json();
+                if (data.pairingCode) {
+                    const codeDisplay = document.getElementById('codeDisplay');
+                    codeDisplay.textContent = data.pairingCode;
+                    codeDisplay.style.display = 'block';
+                } else {
+                    alert('Erreur lors de la génération du code');
+                }
+            } catch (error) {
+                alert('Erreur: ' + error.message);
+            }
+        }
+
+        checkStatus();
+        setInterval(checkStatus, 10000);
+    </script>
+</body>
+</html>

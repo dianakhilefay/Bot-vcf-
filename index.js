@@ -353,6 +353,107 @@ app.post("/pairing-code", async (req, res) => {
   }
 });
 
+// Servir les fichiers statiques de l'interface web
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Route pour l'interface web principale
+app.get('/', (req, res) => {
+  try {
+    // Essayer d'abord simple.html, puis fallback.html, puis une page basique
+    const possibleFiles = ['simple.html', 'fallback.html', 'index.html'];
+    let filePath = null;
+    
+    for (const file of possibleFiles) {
+      const testPath = path.join(__dirname, 'public', file);
+      if (require('fs').existsSync(testPath)) {
+        filePath = testPath;
+        break;
+      }
+    }
+    
+    if (filePath) {
+      console.log(`📁 Serving: ${filePath}`);
+      res.sendFile(filePath);
+    } else {
+      // Fallback HTML inline si aucun fichier trouvé
+      console.log('⚠️ Aucun fichier HTML trouvé, utilisation du fallback inline');
+      res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>VCF Bot</title>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { font-family: Arial; background: linear-gradient(135deg, #667eea, #764ba2); 
+                   min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; }
+            .container { background: white; border-radius: 15px; padding: 30px; max-width: 400px; 
+                         width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+            input, button { padding: 12px; margin: 5px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; }
+            button { background: #25D366; color: white; border: none; cursor: pointer; }
+            .code { background: #f1f8e9; border: 2px solid #8bc34a; border-radius: 8px; 
+                    padding: 15px; margin: 15px 0; font-size: 20px; font-weight: bold; 
+                    color: #2e7d32; display: none; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div style="font-size: 60px; margin-bottom: 20px;">🤖</div>
+            <h1 style="color: #25D366;">VCF Bot</h1>
+            <p>Interface de Connexion WhatsApp</p>
+            <div style="margin: 20px 0;">
+              <input type="tel" id="phone" placeholder="+225XXXXXXXX" style="width: 200px;">
+              <br><button onclick="getPairingCode()">Obtenir le Code</button>
+              <div id="code" class="code"></div>
+            </div>
+            <div>
+              <a href="/health" target="_blank" style="color: #25D366; margin: 0 10px;">Santé</a>
+              <a href="/status" target="_blank" style="color: #25D366; margin: 0 10px;">Statut</a>
+            </div>
+          </div>
+          <script>
+            async function getPairingCode() {
+              const phone = document.getElementById('phone').value.trim();
+              if (!phone || !phone.match(/^\\+\\d{8,}$/)) {
+                alert('Format invalide. Utilisez +225XXXXXXXX');
+                return;
+              }
+              try {
+                const response = await fetch('/pairing-code', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ phoneNumber: phone })
+                });
+                const data = await response.json();
+                if (data.pairingCode) {
+                  document.getElementById('code').textContent = data.pairingCode;
+                  document.getElementById('code').style.display = 'block';
+                }
+              } catch (error) {
+                alert('Erreur: ' + error.message);
+              }
+            }
+          </script>
+        </body>
+        </html>
+      `);
+    }
+  } catch (error) {
+    console.error('❌ Erreur dans la route principale:', error);
+    res.status(500).send(`<h1>Erreur serveur</h1><p>${error.message}</p>`);
+  }
+});
+
+// Route de test
+app.get('/test', (req, res) => {
+  res.json({
+    message: "🟢 Serveur en fonctionnement",
+    timestamp: new Date().toISOString(),
+    publicPath: path.join(__dirname, 'public'),
+    files: require('fs').readdirSync(path.join(__dirname, 'public'))
+  });
+});
+
 // Endpoint de statut
 app.get("/status", (req, res) => {
   const defaultSession = sessionSockets["default_session"];
@@ -366,24 +467,29 @@ app.get("/status", (req, res) => {
   });
 });
 
-// Route pour l'interface web principale
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'simple.html'));
-});
-
-// Servir les fichiers statiques de l'interface web
-app.use(express.static(path.join(__dirname, 'public')));
-
 app.listen(PORT, async () => {
   console.log(`🚀 VCF WhatsApp Bot started on port ${PORT}`);
   console.log(`🌐 Web Interface: http://localhost:${PORT}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`📱 API endpoint: http://localhost:${PORT}/send-message`);
+  console.log(`🧪 Test endpoint: http://localhost:${PORT}/test`);
+  
+  // Vérifier les fichiers publics
+  const publicPath = path.join(__dirname, 'public');
+  console.log(`📁 Dossier public: ${publicPath}`);
+  
+  try {
+    const files = require('fs').readdirSync(publicPath);
+    console.log(`📄 Fichiers disponibles: ${files.join(', ')}`);
+  } catch (error) {
+    console.error(`❌ Erreur lecture dossier public: ${error.message}`);
+  }
   
   // Créer une session par défaut
   try {
     await createBot("default_session");
+    console.log(`✅ Session par défaut créée`);
   } catch (error) {
-    console.error("Error creating default session:", error);
+    console.error("❌ Erreur création session par défaut:", error);
   }
 });

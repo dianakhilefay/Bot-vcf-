@@ -2,11 +2,13 @@
   "name": "bot-vcf",
   "version": "1.0.0",
   "description": "Bot WhatsApp pour VCF Generator - Envoi de messages automatiques",
-  "main": "index.js",
-  "type": "module",
+  "main": "server.js",
+  "type": "commonjs",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "app": "node app.js",
+    "legacy": "node index.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.5",
